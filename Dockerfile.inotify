@@ -1,0 +1,4 @@
+FROM alpine:3.20
+RUN apk add --no-cache inotify-tools
+# -m monitor (don't exit), -r recursive, print time | events | full path
+ENTRYPOINT ["inotifywait","-m","-r","--timefmt","%F %T.%N","--format","%T | %e | %w%f","/watch"]
