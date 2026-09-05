@@ -35,12 +35,12 @@ func main() {
 
 	torrentPath := "/home/danielguglea/DEV/torrents/35David_Sedaris___Me_Talk_Pretty_One_Day.torrent"
 
-	// result, err := qbtClient.AddTorrent(torrentPath)
-	// if err != nil {
-	// 	fmt.Println(err.Error())
-	// 	os.Exit(1)
-	// }
-	// fmt.Printf("add torrent result: %+v\n", result)
+	result, err := qbtClient.AddTorrent(torrentPath)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+	fmt.Printf("add torrent result: %+v\n", result)
 
 	ti, err := parse.Bencode(torrentPath)
 	if err != nil {
