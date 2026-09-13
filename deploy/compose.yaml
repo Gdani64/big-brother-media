@@ -1,0 +1,11 @@
+services:
+  big-brother-media:
+    image: gdani64/big-brother-media:latest
+    container_name: big-brother-media
+    restart: unless-stopped
+    user: "${PUID}:${PGID}"
+    env_file: .env
+    environment:
+      WATCHED_DIR_PATHS: /watch
+    volumes:
+      - ${WATCH_DIR}:/watch:ro
