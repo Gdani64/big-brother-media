@@ -1,12 +1,14 @@
 services:
   big-brother-media:
     image: gdani64/big-brother-media:latest
-    pull_policy: always
     container_name: big-brother-media
     restart: unless-stopped
+    pull_policy: always
+    cpu_shares: 512
+    mem_limit: 128m
     user: "${PUID}:${PGID}"
     env_file: .env
     environment:
       WATCHED_DIR_PATHS: /watch
     volumes:
-      - ${WATCH_DIR}:/watch:ro
+      - ${WATCH_DIR}:/watch:rw
