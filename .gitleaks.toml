@@ -1,0 +1,20 @@
+title = "big-brother-media gitleaks config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "generic-high-entropy-assignment"
+description = "High-entropy value assigned to a secret-ish identifier"
+regex = '''(?i)(secret|token|passwo?r?d|api[_-]?key|auth|credential)[a-z0-9_.\-]{0,20}\s*(?::=|[:=])\s*['"]([a-z0-9+/=_\-]{20,})['"]'''
+secretGroup = 2
+entropy = 3.5
+keywords = ["secret", "token", "password", "passwd", "apikey", "api_key", "auth", "credential"]
+
+[allowlist]
+paths = [
+  '''package-lock\.json''',
+  '''composer\.lock''',
+  '''go\.sum''',
+  '''.*\.min\.js$''',
+]

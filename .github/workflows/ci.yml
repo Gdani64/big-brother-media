@@ -19,6 +19,20 @@ jobs:
         with:
           go-version-file: go.mod
 
+  secret_scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks (diff only)
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          docker run --rm -v "$PWD:/repo" -w /repo ghcr.io/gitleaks/gitleaks:latest \
+            git --config .gitleaks.toml --log-opts="$BASE..${{ github.sha }}" --redact -v
+
   go_build_test:
     runs-on: ubuntu-latest
     steps:
@@ -32,7 +46,7 @@ jobs:
       - run: go test ./...
 
   dockerhub_build_publish:
-    needs: [vulnerability_check, go_build_test]
+    needs: [vulnerability_check, secret_scan, go_build_test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
