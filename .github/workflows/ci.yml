@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 env:
-  IMAGE: gdani64/boilerplate-software:big-brother-media
+  IMAGE: gdani64/big-brother-media:latest
 
 jobs:
   vulnerability_check:
