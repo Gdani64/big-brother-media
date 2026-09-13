@@ -2,6 +2,7 @@ package ingest
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/Gdani64/big-brother-media/internal/classify"
 	"github.com/Gdani64/big-brother-media/internal/parse"
@@ -38,6 +39,11 @@ func NewFileJob(baseDiskPath string, torrentPath string, qbtClient qbt.Client, m
 		return fmt.Errorf("torrent api error: %v", err)
 	}
 	fmt.Printf("add torrent result: %+v\n", result)
+
+	err = os.Remove(torrentPath)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
