@@ -10,7 +10,7 @@ env:
   IMAGE: gdani64/boilerplate-software:big-brother-media
 
 jobs:
-  vulncheck:
+  vulnerability_check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -32,7 +32,7 @@ jobs:
       - run: go test ./...
 
   dockerhub_build_publish:
-    needs: [vulncheck, go_build_test]
+    needs: [vulnerability_check, go_build_test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
