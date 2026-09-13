@@ -1,8 +1,8 @@
 module github.com/Gdani64/big-brother-media
 
-go 1.24
+go 1.26
 
-toolchain go1.24.0
+toolchain go1.26.7
 
 require (
 	github.com/zeebo/bencode v1.0.0
