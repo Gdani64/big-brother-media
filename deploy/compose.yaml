@@ -12,3 +12,11 @@ services:
       WATCHED_DIR_PATHS: /watch
     volumes:
       - ${WATCH_DIR}:/watch:rw
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - media
+
+networks:
+  media:
+    external: true
