@@ -12,7 +12,7 @@ type mediaClassifier interface {
 	Query(input classify.Input) (classify.MediaType, error)
 }
 
-func NewFileJob(torrentPath string, qbtClient qbt.Client, mc mediaClassifier) error {
+func NewFileJob(baseDiskPath string, torrentPath string, qbtClient qbt.Client, mc mediaClassifier) error {
 	ti, err := parse.Bencode(torrentPath)
 	if err != nil {
 		return fmt.Errorf("bencode parsing error: %v", err)
@@ -33,7 +33,7 @@ func NewFileJob(torrentPath string, qbtClient qbt.Client, mc mediaClassifier) er
 	}
 	fmt.Printf("classified as: %s\n", mediaType)
 
-	result, err := qbtClient.AddTorrent(torrentPath, qbt.WithSavePath(classify.MediaTypeToPath(mediaType)))
+	result, err := qbtClient.AddTorrent(torrentPath, qbt.WithSavePath(baseDiskPath+classify.MediaTypeToPath(mediaType)))
 	if err != nil {
 		return fmt.Errorf("torrent api error: %v", err)
 	}

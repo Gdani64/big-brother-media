@@ -15,6 +15,11 @@ import (
 func main() {
 	ctx := context.Background()
 
+	baseDiskPath, exists := os.LookupEnv("DOWNLOAD_BASE_DISK_PATH")
+	if !exists {
+		panic("DOWNLOAD_BASE_DISK_PATH env variable not set")
+	}
+
 	apiKey, exists := os.LookupEnv("QB_API_KEY")
 	if !exists {
 		panic("QB_API_KEY env variable not set")
@@ -43,7 +48,7 @@ func main() {
 	for f := range newFileEvents {
 		fmt.Printf("new file %s\n", f.Name)
 		go func() {
-			err := ingest.NewFileJob(f.Name, qbtClient, geminiClassifier)
+			err := ingest.NewFileJob(baseDiskPath, f.Name, qbtClient, geminiClassifier)
 			if err != nil {
 				fmt.Println(err.Error())
 			}

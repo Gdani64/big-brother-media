@@ -49,8 +49,6 @@ func MediaTypeFromName(name string) (MediaType, bool) {
 	return TypeUnknown, false
 }
 
-const baseDiskPath = "/Media"
-
 var diskPaths = map[MediaType]string{
 	TypeMovie:     "Movies",
 	TypeTVShow:    "TV\\ Shows",
@@ -63,5 +61,5 @@ var diskPaths = map[MediaType]string{
 }
 
 func MediaTypeToPath(mediaType MediaType) string {
-	return baseDiskPath + diskPaths[mediaType]
+	return diskPaths[mediaType]
 }

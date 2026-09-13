@@ -96,6 +96,11 @@ func dedupLoop(ctx context.Context, w *fsnotify.Watcher, events chan<- fsnotify.
 				continue
 			}
 
+			// Only watch for torrent files
+			if filepath.Ext(e.Name) != ".torrent" {
+				continue
+			}
+
 			// Get timer.
 			mu.Lock()
 			t, ok := timers[e.Name]
