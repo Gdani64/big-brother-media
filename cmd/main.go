@@ -14,11 +14,11 @@ import (
 
 func main() {
 	ctx := context.Background()
-	apiKey := "private_do_not_share_asdasdasdas12321123"
-	//apiKey, exists := os.LookupEnv("QB_API_KEY")
-	//if !exists {
-	//	panic("QB_API_KEY env variable not set")
-	//}
+
+	apiKey, exists := os.LookupEnv("QB_API_KEY")
+	if !exists {
+		panic("QB_API_KEY env variable not set")
+	}
 
 	qbtClient := qbt.NewClient(apiKey)
 
