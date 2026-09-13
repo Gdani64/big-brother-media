@@ -30,8 +30,12 @@ jobs:
         env:
           BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
         run: |
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BASE" 2>/dev/null; then
+            BASE=$(git rev-parse HEAD~1 2>/dev/null || git rev-list --max-parents=0 HEAD)
+          fi
+          echo "scanning $BASE..HEAD"
           docker run --rm -v "$PWD:/repo" -w /repo ghcr.io/gitleaks/gitleaks:latest \
-            git --config .gitleaks.toml --log-opts="$BASE..${{ github.sha }}" --redact -v
+            git --config .gitleaks.toml --log-opts="$BASE..HEAD" --redact -v
 
   go_build_test:
     runs-on: ubuntu-latest
