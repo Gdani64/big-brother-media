@@ -50,14 +50,14 @@ func MediaTypeFromName(name string) (MediaType, bool) {
 }
 
 var diskPaths = map[MediaType]string{
-	TypeMovie:     "Movies",
-	TypeTVShow:    "TV\\ Shows",
-	TypeAudioBook: "Audio\\ Books",
-	TypeBook:      "Books",
-	TypeMusic:     "Music",
-	TypeSoftware:  "Software",
-	TypeGame:      "Games",
-	TypeUnknown:   "Others",
+	TypeMovie:     "/Movies",
+	TypeTVShow:    "/TV\\ Shows",
+	TypeAudioBook: "/Audio\\ Books",
+	TypeBook:      "/Books",
+	TypeMusic:     "/Music",
+	TypeSoftware:  "/Software",
+	TypeGame:      "/Games",
+	TypeUnknown:   "/Others",
 }
 
 func MediaTypeToPath(mediaType MediaType) string {
