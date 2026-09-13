@@ -1,6 +1,8 @@
-package folderwatcher
+package dirwatcher
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -11,40 +13,48 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-// Depending on the system, a single "write" can generate many Write events; for
+// WatchForNewFiles Depending on the system, a single "write" can generate many Write events; for
 // example compiling a large Go program can generate hundreds of Write events on
 // the binary.
 //
 // The general strategy to deal with this is to wait a short time for more write
 // events, resetting the wait period for every new event.
-func Watch(paths ...string) {
+func WatchForNewFiles(ctx context.Context, paths ...string) (<-chan fsnotify.Event, error) {
 	if len(paths) < 1 {
-		exit("must specify at least one path to watch")
+		return nil, errors.New("must specify at least one path to watch")
 	}
 
 	// Create a new watcher.
 	w, err := fsnotify.NewWatcher()
 	if err != nil {
-		exit("creating a new watcher: %s", err)
+		return nil, fmt.Errorf("creating a new watcher: %v", err)
 	}
-	defer w.Close()
+
+	// Do not specify channel direction in make as it will also be limited at its eventual call site
+	events := make(chan fsnotify.Event)
 
 	// Start listening for events.
-	go dedupLoop(w)
+	go dedupLoop(ctx, w, events)
+	fmt.Println("dir watcher started...")
 
 	// Add all paths from the commandline.
 	for _, p := range paths {
 		err = w.Add(p)
 		if err != nil {
-			exit("%q: %s", p, err)
+			return nil, fmt.Errorf("%q: %v", p, err)
 		}
+		fmt.Printf("added dir %s to watchlist\n", p)
 	}
 
-	printTime("ready; press ^C to exit")
-	<-make(chan struct{}) // Block forever
+	fmt.Println("all paths added to watchlist...")
+
+	return events, nil
 }
 
-func dedupLoop(w *fsnotify.Watcher) {
+func dedupLoop(ctx context.Context, w *fsnotify.Watcher, events chan<- fsnotify.Event) {
+	defer w.Close()
+	defer close(events)
+
 	var (
 		// Wait 100ms for new events; each new event resets the timer.
 		waitFor = 100 * time.Millisecond
@@ -66,6 +76,8 @@ func dedupLoop(w *fsnotify.Watcher) {
 
 	for {
 		select {
+		case <-ctx.Done():
+			return
 		// Read from Errors.
 		case err, ok := <-w.Errors:
 			if !ok { // Channel was closed (i.e. Watcher.Close() was called).
@@ -91,7 +103,10 @@ func dedupLoop(w *fsnotify.Watcher) {
 
 			// No timer yet, so create one.
 			if !ok {
-				t = time.AfterFunc(math.MaxInt64, func() { printEvent(e) })
+				t = time.AfterFunc(math.MaxInt64, func() {
+					printEvent(e)
+					events <- e
+				})
 				t.Stop()
 
 				mu.Lock()
@@ -109,21 +124,7 @@ func printTime(s string, args ...any) {
 	fmt.Printf(time.Now().Format("15:04:05.0000")+" "+s+"\n", args...)
 }
 
-var usage = `
-fsnotify is a Go library to provide cross-platform file system notifications.
-This command serves as an example and debugging tool.
-
-https://github.com/fsnotify/fsnotify
-
-Commands:
-
-    watch [paths]  Watch the paths for changes and print the events.
-    file  [file]   Watch a single file for changes.
-    dedup [paths]  Watch the paths for changes, suppressing duplicate events.
-`[1:]
-
 func exit(format string, a ...any) {
 	fmt.Fprintf(os.Stderr, filepath.Base(os.Args[0])+": "+format+"\n", a...)
-	fmt.Print("\n" + usage)
 	os.Exit(1)
 }

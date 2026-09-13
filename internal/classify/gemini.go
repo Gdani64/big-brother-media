@@ -16,6 +16,11 @@ const (
 	maxOutputTokens    = 32
 )
 
+type Input struct {
+	Name      string
+	FilePaths []string
+}
+
 // classification is the shape Gemini must return, per responseSchema below.
 type classification struct {
 	MediaType string `json:"media_type"`
@@ -76,11 +81,11 @@ func NewGemini(opts ...AddGeminiOption) (*Gemini, error) {
 	}, nil
 }
 
-func (g *Gemini) Query(name string, filePaths []string) (MediaType, error) {
+func (g *Gemini) Query(in Input) (MediaType, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	filePaths = filePaths[:min(len(filePaths), 100)]
+	filePaths := in.FilePaths[:min(len(in.FilePaths), 100)]
 
 	contentConfig := &genai.GenerateContentConfig{
 		ResponseMIMEType: responseMIMEType,
@@ -91,7 +96,7 @@ func (g *Gemini) Query(name string, filePaths []string) (MediaType, error) {
 	contents := genai.Text(
 		fmt.Sprintf(
 			"Classify archive %s containing the listed files into one of the following categories: %s.\n Files: %s",
-			name,
+			in.Name,
 			strings.Join(AllMediaTypeNames(), ", "),
 			strings.Join(filePaths, ", ")),
 	)

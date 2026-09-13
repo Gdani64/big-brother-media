@@ -1,6 +1,8 @@
 package classify
 
 import (
+	"maps"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -85,6 +87,8 @@ func TestMediaTypeFromName(t *testing.T) {
 }
 
 func TestAllMediaTypeNames(t *testing.T) {
-	res := AllMediaTypeNames()
-	require.ElementsMatch(t, res, me)
+	t.Run("All basic media types are represented", func(t *testing.T) {
+		res := AllMediaTypeNames()
+		require.Subset(t, res, slices.Collect(maps.Values(typeNames)))
+	})
 }

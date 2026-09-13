@@ -1,71 +1,54 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/Gdani64/big-brother-media/internal/classify"
-	"github.com/Gdani64/big-brother-media/internal/parse"
+	"github.com/Gdani64/big-brother-media/internal/dirwatcher"
+	"github.com/Gdani64/big-brother-media/internal/ingest"
 	"github.com/Gdani64/big-brother-media/internal/qbt"
 )
 
 func main() {
+	ctx := context.Background()
+
 	apiKey, exists := os.LookupEnv("QB_API_KEY")
 	if !exists {
-		fmt.Println("QB_API_KEY env variable not set")
-		os.Exit(0)
+		panic("QB_API_KEY env variable not set")
 	}
 
 	qbtClient := qbt.NewClient(apiKey)
 
-	apiVersion, err := qbtClient.Version()
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-	fmt.Printf("qbt API version: %s\n", apiVersion)
-
-	// torrentsInfo, err := qbtClient.TorrentsInfo()
-	// if err != nil {
-	// 	fmt.Println(err.Error())
-	// 	os.Exit(1)
-	// }
-
-	// fmt.Printf("torrents info: %v\n", torrentsInfo)
-
-	torrentPath := "/home/danielguglea/DEV/torrents/35David_Sedaris___Me_Talk_Pretty_One_Day.torrent"
-
-	result, err := qbtClient.AddTorrent(torrentPath)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-	fmt.Printf("add torrent result: %+v\n", result)
-
-	ti, err := parse.Bencode(torrentPath)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-
-	files := make([]string, 0, len(ti.Info.Files))
-	for _, file := range ti.Info.Files {
-		files = append(files, file.Path...)
-	}
-
 	geminiClassifier, err := classify.NewGemini()
 	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
+		panic(fmt.Errorf("gemini classifier constructor error: %v", err))
 	}
 
-	mediaType, err := geminiClassifier.Query(ti.Info.Name, files)
+	paths, exists := os.LookupEnv("WATCHED_DIR_PATHS")
+	if !exists {
+		panic("WATCHED_DIR_PATHS env variable not set")
+	}
+
+	splitPaths := strings.Split(paths, ",")
+
+	newFileEvents, err := dirwatcher.WatchForNewFiles(ctx, splitPaths...)
 	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
+		panic(fmt.Errorf("error from dir watcher: %v", err))
 	}
 
-	fmt.Printf("classified as: %s\n", mediaType)
+	// pre go 1.22 version, all goroutines would receive the same f unless shadowed and reassigned with f := f
+	for f := range newFileEvents {
+		fmt.Printf("new file %s\n", f.Name)
+		go func() {
+			err := ingest.NewFileJob(f.Name, qbtClient, geminiClassifier)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+		}()
+	}
 
 	os.Exit(0)
 }

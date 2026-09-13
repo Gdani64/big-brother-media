@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 )
 
 const (
-	BaseUrlV2 = "http://192.168.68.68:8095/api/v2"
+	BaseUrlEnv = "SYNO_IP"
+	BasePathV2 = "/api/v2"
 )
 
 type Client struct {
@@ -19,8 +21,13 @@ type Client struct {
 }
 
 func NewClient(apiKey string) Client {
+	baseUrl, exists := os.LookupEnv(BaseUrlEnv)
+	if !exists {
+		panic("SYNO_IP env variable not set")
+	}
+
 	return Client{
-		BaseUrl: BaseUrlV2,
+		BaseUrl: baseUrl + BasePathV2,
 		apiKey:  apiKey,
 		HTTPClient: &http.Client{
 			Timeout: time.Minute,
