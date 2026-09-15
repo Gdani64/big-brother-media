@@ -82,7 +82,7 @@ func NewGemini(opts ...AddGeminiOption) (*Gemini, error) {
 }
 
 func (g *Gemini) Query(in Input) (MediaType, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
 	filePaths := in.FilePaths[:min(len(in.FilePaths), 100)]
