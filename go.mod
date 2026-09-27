@@ -5,6 +5,7 @@ go 1.26.0
 toolchain go1.26.7
 
 require (
+	github.com/getsentry/sentry-go v0.49.0
 	github.com/zeebo/bencode v1.0.0
 	google.golang.org/genai v1.70.0
 )
