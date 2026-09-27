@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sethvargo/go-retry"
 	"google.golang.org/genai"
 )
 
@@ -82,7 +83,8 @@ func NewGemini(opts ...AddGeminiOption) (*Gemini, error) {
 }
 
 func (g *Gemini) Query(in Input) (MediaType, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 650*time.Second) // Keep this timeout value higher than
+	// the exponential backoff10+20+40+80+160+320 = 630s
 	defer cancel()
 
 	filePaths := in.FilePaths[:min(len(in.FilePaths), 100)]
@@ -101,7 +103,15 @@ func (g *Gemini) Query(in Input) (MediaType, error) {
 			strings.Join(filePaths, ", ")),
 	)
 
-	result, err := g.client.Models.GenerateContent(ctx, g.model, contents, contentConfig)
+	b := retry.NewExponential(10 * time.Second)
+	result, err := retry.DoValue(ctx, retry.WithMaxRetries(6, b), func(ctx context.Context) (*genai.GenerateContentResponse, error) {
+		result, err := g.client.Models.GenerateContent(ctx, g.model, contents, contentConfig)
+		if err != nil {
+			return nil, retry.RetryableError(fmt.Errorf("error from google AI studio API: %v", err))
+		}
+
+		return result, nil
+	})
 	if err != nil {
 		return TypeUnknown, err
 	}

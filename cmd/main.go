@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/Gdani64/big-brother-media/internal/classify"
 	"github.com/Gdani64/big-brother-media/internal/dirwatcher"
@@ -28,50 +27,45 @@ func main() {
 		log.Fatalf("sentry.Init: %s", err)
 	}
 
-	// TESTING start
-	// Flush buffered events before the program terminates.
-	defer sentry.Flush(2 * time.Second)
-	sentry.CaptureMessage("It works!")
-	// TESTING end
-
 	ctx := context.Background()
+	logger := sentry.NewLogger(ctx)
 
 	baseDiskPath, exists := os.LookupEnv("DOWNLOAD_BASE_DISK_PATH")
 	if !exists {
-		log.Fatal("DOWNLOAD_BASE_DISK_PATH env variable not set")
+		logger.Fatal().Emit("DOWNLOAD_BASE_DISK_PATH env variable not set")
 	}
 
 	apiKey, exists := os.LookupEnv("QB_API_KEY")
 	if !exists {
-		log.Fatal("QB_API_KEY env variable not set")
+		logger.Fatal().Emit("QB_API_KEY env variable not set")
 	}
 
 	qbtClient := qbt.NewClient(apiKey)
 
 	geminiClassifier, err := classify.NewGemini()
 	if err != nil {
-		log.Fatalf("gemini classifier constructor error: %v", err)
+		logger.Fatal().String("error", err.Error()).Emit("gemini classifier constructor error")
 	}
 
 	paths, exists := os.LookupEnv("WATCHED_DIR_PATHS")
 	if !exists {
-		log.Fatal("WATCHED_DIR_PATHS env variable not set")
+		logger.Fatal().Emit("WATCHED_DIR_PATHS env variable not set")
 	}
 
 	splitPaths := strings.Split(paths, ",")
 
 	newFileEvents, err := dirwatcher.WatchForNewFiles(ctx, splitPaths...)
 	if err != nil {
-		log.Fatalf("error from dir watcher: %v", err)
+		logger.Fatal().String("error", err.Error()).Emit("error from dir watcher")
 	}
 
 	// pre go 1.22 version, all goroutines would receive the same f unless shadowed and reassigned with f := f
 	for f := range newFileEvents {
-		log.Printf("new file %s\n", f.Name)
+		logger.Info().String("file", f.Name).Emit("new file")
 		go func() {
 			err := ingest.NewFileJob(baseDiskPath, f.Name, qbtClient, geminiClassifier)
 			if err != nil {
-				log.Println(err.Error())
+				logger.Error().Emit(err.Error())
 			}
 		}()
 	}
