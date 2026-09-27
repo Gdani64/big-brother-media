@@ -57,7 +57,7 @@ func dedupLoop(ctx context.Context, w *fsnotify.Watcher, events chan<- fsnotify.
 
 	var (
 		// Wait 100ms for new events; each new event resets the timer.
-		waitFor = 100 * time.Millisecond
+		waitFor = 250 * time.Millisecond
 
 		// Keep track of the timers, as path → timer.
 		mu     sync.Mutex
@@ -89,10 +89,10 @@ func dedupLoop(ctx context.Context, w *fsnotify.Watcher, events chan<- fsnotify.
 			if !ok { // Channel was closed (i.e. Watcher.Close() was called).
 				return
 			}
-
+			printTime("event: %s", e)
 			// We just want to watch for file creation, so ignore everything
 			// outside of Create and Write.
-			if !e.Has(fsnotify.Create) && !e.Has(fsnotify.Write) {
+			if !e.Has(fsnotify.Write) {
 				continue
 			}
 
